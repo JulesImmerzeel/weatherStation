@@ -1,5 +1,6 @@
 #include <Wire.h>         // adds I2C library 
 #include <BH1750.h>       // adds BH1750 library file
+#include "rgb_lcd.h"
 #include <DHT.h>
 #include <ESP8266WiFi.h>
 #include <ArduinoHA.h>
@@ -18,6 +19,7 @@
 #define RS485Receive     LOW
 
 DHT dht(DHTPIN, DHTTYPE);
+rgb_lcd lcd;
 BH1750 lightMeter;
 SoftwareSerial RS485Serial(RX, TX);
 
@@ -43,7 +45,7 @@ HASensor sensorHumidity("Humidity");
 HASensor sensorSignalstrength("Signal_strength");
 HASensor sensorLux ("BH1750");
 HASensor sensorWind ("Anemometer"); 
-
+bool switched;
 void setup() {
   Serial.begin(9600);
   Serial.println("Starting...");
@@ -61,7 +63,7 @@ void setup() {
   }
   Serial.println();
   Serial.println("Connected to the network");
-
+  switched = false;
 
   // Set sensor and/or device names
   // String conversion for incoming data from Secret.h
@@ -145,6 +147,7 @@ void setup() {
   digitalWrite(15, LOW);
   Wire.begin();
   lightMeter.begin();
+  lcd.begin(16, 2);
   dht.begin();
   RS485Serial.begin(9600);
 }
@@ -190,6 +193,24 @@ void loop() {
   Serial.println(hum);
   Serial.println(ws);
   Serial.println(" ");
+  lcd.clear();
+  //switch between displaying data
+  if (switched)
+  {
+    lcd.setCursor(0, 0);
+    lcd.print("Temp: " + (String)temp + "*C");
+    lcd.setCursor(0,1);
+    lcd.print("Hum: " + (String)hum + "%");
+    switched = false;
+  }
+  else
+  {
+    lcd.setCursor(0, 0);
+    lcd.print("light: " + (String)lux + "lx");
+    lcd.setCursor(0,1);
+    lcd.print("wind: " + ws + "m/s");
+    switched = true;
+  }
 
   if (lux < 10)
   {
